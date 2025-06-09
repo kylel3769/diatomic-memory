@@ -74,31 +74,16 @@
             };
 
             function keyPressed() {
-              if (Object.values(cheatKeys).every(Boolean)) {
-                for (let card of cards) {
-                  if (!card.fake) {
-                    card.flipped = true;
-                    card.matched = true;
-                  }
-                }
-                gameOver = true;
-                timeW = (millis() - startTime) / 1000;
-                cheated = true;
-              }
               let k = key.toLowerCase();
               if (cheatKeys.hasOwnProperty(k)) {
                 cheatKeys[k] = true;
               }
 
-              if (Object.values(cheatKeys).every(Boolean)) {
-                for (let card of cards) {
-                  if (!card.fake) {
-                    card.flipped = true;
-                    card.matched = true;
-                  }
-                }
-                gameOver = true;
-                timeW = (millis() - startTime) / 1000;
+              if (
+                start && !gameOver &&
+                cheatKeys.e && cheatKeys.z && !cheated
+              ) {
+                activateCheat();
               }
             }
 
@@ -107,6 +92,18 @@
               if (cheatKeys.hasOwnProperty(k)) {
                 cheatKeys[k] = false;
               }
+            }
+
+            function activateCheat() {
+              for (let card of cards) {
+                if (!card.fake) {
+                  card.flipped = true;
+                  card.matched = true;
+                }
+              }
+              gameOver = true;
+              timeW = (millis() - startTime) / 1000;
+              cheated = true;
             }
 
             function setup() {
@@ -220,7 +217,7 @@
                 if (cheated) {
                   fill(255, 80, 80);
                   textSize(18);
-                  text("nice cheats :p", cX / 2, cY / 2 + 45);
+                  text("nice cheats :p", cX / 2, cY / 2 + 105);
                 }
                 textSize(18);
 
@@ -376,7 +373,7 @@
                           gameOver = true;
                           timeW = time;
                         }
-                      }, 300);
+                      }, 200);
                     }
 
                     break;
