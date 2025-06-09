@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.min.js"></script>
+        <!--<link href="style.css" rel="stylesheet" type="text/css" />-->
+        <style>
+            /* CSS */
+            body {
+              background-color: #2f4a4a;
+              margin: 0;
+              padding: 20px 0;
+              font-family: sans-serif;
+              color: white;
+            }
+        </style>
+
+        <title>Diatomic Molecules</title>
+    </head>
+    <body>
+        <!-- HTML -->
+
+        <h1 style="text-align:center; color: white; margin-bottom: 1rem;">
+          Welcome to the diatomic molecule memory game!
+        </h1>
+
+        <div id="canvas-container" style="display: flex; justify-content: center;">
+
+        </div>
+
+        <!-- <h1>Welcome to the extreme math quizzer!</h1> -->
+
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"></script>
+        <!--<script src="script.js"></script>-->
+        <script>
+            // JS
+            let startTime = 0;
+            let backImg;
+            let cX = 500;
+            let cY = 500;
+            let start = false;
+            let easy = true;
+            let med = false;
+            let hard = false;
+            let time = 0;
+            let timeW = 0;
+            let canClick = true;
+            let gameOver = false;
+            let cheated = false;
+
+            let fakeElements = ["Na", "C", "He", "Ne"];
+            let elements = ["H", "N", "O", "F", "Cl", "Br", "I"];
+
+            let cards = [];
+            let restartButton;
+            let cardW = 100;
+            let cardH = 150;
+            let flippedCards = [];
+            let cols = 3;
+            let rows = 2;
+            let pairCount = 3;
+            let fakeCount = 0;
+
+
+            // may or may not be a cheat button
+            let cheatKeys = {
+              e: false,
+              z: false
+            };
+
+            function keyPressed() {
+              if (Object.values(cheatKeys).every(Boolean)) {
+                for (let card of cards) {
+                  if (!card.fake) {
+                    card.flipped = true;
+                    card.matched = true;
+                  }
+                }
+                gameOver = true;
+                timeW = (millis() - startTime) / 1000;
+                cheated = true;
+              }
+              let k = key.toLowerCase();
+              if (cheatKeys.hasOwnProperty(k)) {
+                cheatKeys[k] = true;
+              }
+
+              if (Object.values(cheatKeys).every(Boolean)) {
+                for (let card of cards) {
+                  if (!card.fake) {
+                    card.flipped = true;
+                    card.matched = true;
+                  }
+                }
+                gameOver = true;
+                timeW = (millis() - startTime) / 1000;
+              }
+            }
+
+            function keyReleased() {
+              let k = key.toLowerCase();
+              if (cheatKeys.hasOwnProperty(k)) {
+                cheatKeys[k] = false;
+              }
+            }
+
+            function setup() {
+              cX = windowWidth * 0.8;
+              cY = windowHeight * 0.8;
+              let canvas = createCanvas(cX, cY);
+              canvas.parent('canvas-container');  // attach canvas inside your container div
+              textAlign(CENTER);
+              rectMode(CENTER);
+              setDifficulty();
+            }
+
+            function windowResized() {
+              cX = windowWidth * 0.8;
+              cY = windowHeight * 0.8;
+              resizeCanvas(cX, cY);
+              setDifficulty();
+            }
+
+            function setDifficulty() {
+              cards = [];
+
+              if (easy) {
+                pairCount = 3;
+                fakeCount = 0;
+                cols = 3;
+                rows = 2;
+              } else if (med) {
+                pairCount = 4;
+                fakeCount = 0;
+                cols = 4;
+                rows = 2;
+              } else if (hard) {
+                pairCount = 5;
+                fakeCount = 2;
+                cols = 4;
+                rows = 3;
+              }
+
+              let selectedPairs = shuffle(elements.slice(), true).slice(0, pairCount);
+              let pairs = selectedPairs.concat(selectedPairs);
+
+              let fakes = fakeElements.slice(0, fakeCount);
+              let cardValues = pairs.concat(fakes);
+
+              shuffle(cardValues, true);
+
+              let spacingX = cX / (cols + 1);
+              let spacingY = cY / (rows + 1);
+
+              for (let i = 0; i < cardValues.length; i++) {
+                let col = i % cols;
+                let row = Math.floor(i / cols);
+                let x = spacingX * (col + 1);
+                let y = spacingY * (row + 1);
+
+                cards.push({
+                  x: x,
+                  y: y,
+                  value: cardValues[i],
+                  flipped: false,
+                  matched: false,
+                  fake: fakeElements.includes(cardValues[i]),
+                });
+              }
+            }
+
+            function draw() {
+              background(47, 164, 74);
+              if (!start) {
+                drawMenu();
+              } else {
+                drawGame();
+              }
+            }
+
+            function preload() {
+              backImg = loadImage('card.png'); // Replace with your image path
+            }
+
+            function checkWin() {
+              for (let card of cards) {
+                if (!card.matched && !card.fake) {
+                  return false;
+                }
+              }
+              return true;
+            }
+
+            function drawGame() {
+              if (!gameOver) {
+                time = (millis() - startTime) / 1000;
+              }
+
+              if (checkWin()) {
+                if (!gameOver) {
+                  timeW = time;
+                  gameOver = true;
+                }
+                fill(0, 150);
+                rect(cX / 2, cY / 2, cX, cY);
+                fill(0, 200, 0);
+                rect(cX / 2, cY / 2, 300, 150, 20);
+                fill(255);
+                textSize(28);
+                text("You Win!", cX / 2, cY / 2 - 20);
+                textSize(22);
+
+                timeW = Math.floor((timeW*10))/10
+                text("Time: " + timeW + " seconds", cX / 2, cY / 2 + 20);
+                if (cheated) {
+                  fill(255, 80, 80);
+                  textSize(18);
+                  text("nice cheats :p", cX / 2, cY / 2 + 45);
+                }
+                textSize(18);
+
+                if (!restartButton) {
+                  restartButton = createButton("Restart");
+                  restartButton.position(windowWidth / 2 - 40, windowHeight / 2 + 25);
+                  restartButton.mousePressed(restartGame);
+                }
+
+                return;
+              }
+
+              fill(255);
+              textSize(20);
+              text("Time: " + time.toFixed(1), 50, 30);
+
+              for (let card of cards) {
+                if (!card.flipped && !card.matched) {
+                  // Instead of rect with color, draw back image
+                  imageMode(CENTER);
+                  image(backImg, card.x, card.y, cardW, cardH);
+                } else {
+                  fill(255);
+                  rect(card.x, card.y, cardW, cardH, 10);
+                  fill(0);
+                  textSize(32);
+                  text(card.value, card.x, card.y + 10);
+                }
+              }
+            }
+
+            function drawMenu() {
+              strokeWeight(5);
+              textSize(31);
+              fill(0);
+              text("Diatomic pairs", cX / 2, 49);
+              fill(255);
+              textSize(30);
+              text("Diatomic pairs", cX / 2, 50);
+              strokeWeight(1);
+
+              // Add description below title
+              fill(255);
+              textSize(16);
+              text("Match elements to make diatomic molecules!", cX / 2, 90);
+              text("Watch out! Hard mode may have some elements that can't become diatomic molecules!", cX / 2, 110);
+
+              hoveringRect(cX / 2, cY / 4, 200, 75);
+              rect(cX / 2, cY / 4, 200, 75, 10);
+              fill(0);
+              textSize(25);
+              text("Easy (6 cards)", cX / 2, cY / 4 + 7);
+
+              hoveringRect(cX / 2, cY / 2.25, 200, 75);
+              rect(cX / 2, cY / 2.25, 200, 75, 10);
+              fill(0);
+              text("Medium (8 cards)", cX / 2, cY / 2.25 + 7);
+
+              hoveringRect(cX / 2, cY / 1.5, 200, 75);
+              rect(cX / 2, cY / 1.5, 200, 75, 10);
+              fill(0);
+              text("Hard (12 cards)", cX / 2, cY / 1.5 + 7);
+            }
+
+
+            function hoveringRect(x, y, w, h) {
+              if (
+                mouseX >= x - w / 2 &&
+                mouseX <= x + w / 2 &&
+                mouseY >= y - h / 2 &&
+                mouseY <= y + h / 2
+              ) {
+                fill(255, 85, 0);
+              } else {
+                fill(255);
+              }
+            }
+
+            function mousePressed() {
+              if (!start) {
+                if (mouseX >= cX / 2 - 100 && mouseX <= cX / 2 + 100) {
+                  if (mouseY >= cY / 4 - 37.5 && mouseY <= cY / 4 + 37.5) {
+                    easy = true;
+                    med = false;
+                    hard = false;
+                    start = true;
+                    gameOver = false;
+                    setDifficulty();
+                    flippedCards = [];
+                    time = 0;
+                    timeW = 0;
+                    canClick = true;
+                    startTime = millis();  // Reset timer here
+                  } else if (mouseY >= cY / 2.25 - 37.5 && mouseY <= cY / 2.25 + 37.5) {
+                    easy = false;
+                    med = true;
+                    hard = false;
+                    start = true;
+                    gameOver = false;
+                    setDifficulty();
+                    flippedCards = [];
+                    time = 0;
+                    timeW = 0;
+                    canClick = true;
+                    startTime = millis();  // Reset timer here
+                  } else if (mouseY >= cY / 1.5 - 37.5 && mouseY <= cY / 1.5 + 37.5) {
+                    easy = false;
+                    med = false;
+                    hard = true;
+                    start = true;
+                    gameOver = false;
+                    setDifficulty();
+                    flippedCards = [];
+                    time = 0;
+                    timeW = 0;
+                    canClick = true;
+                    startTime = millis();  // Reset timer here
+                  }
+                }
+              } else {
+                if (!canClick) return;
+
+                for (let card of cards) {
+                  if (
+                    !card.flipped &&
+                    !card.matched &&
+                    mouseX >= card.x - cardW / 2 &&
+                    mouseX <= card.x + cardW / 2 &&
+                    mouseY >= card.y - cardH / 2 &&
+                    mouseY <= card.y + cardH / 2
+                  ) {
+                    card.flipped = true;
+                    flippedCards.push(card);
+
+                    if (flippedCards.length === 2) {
+                      canClick = false;
+                      setTimeout(() => {
+                        if (
+                          flippedCards[0].value === flippedCards[1].value &&
+                          !flippedCards[0].fake &&
+                          !flippedCards[1].fake
+                        ) {
+                          flippedCards[0].matched = true;
+                          flippedCards[1].matched = true;
+                        } else {
+                          flippedCards[0].flipped = false;
+                          flippedCards[1].flipped = false;
+                        }
+                        flippedCards = [];
+                        canClick = true;
+
+                        if (checkWin()) {
+                          gameOver = true;
+                          timeW = time;
+                        }
+                      }, 300);
+                    }
+
+                    break;
+                  }
+                }
+              }
+            }
+
+            function restartGame() {
+              if (restartButton) {
+                restartButton.remove();
+                restartButton = null;
+              }
+
+              cheated = false;
+              start = false;
+              easy = true;
+              med = false;
+              hard = false;
+              flippedCards = [];
+              cards = [];
+              time = 0;
+              timeW = 0;
+              canClick = true;
+              gameOver = false;
+            }
+
+
+        </script>
+    </body>
+</html>
